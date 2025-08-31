@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PriceFinder Test</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 20px auto; padding: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        input, button { width: 100%; padding: 10px; margin: 5px 0; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        .results { background: #f8f9fa; padding: 15px; margin: 10px 0; white-space: pre-wrap; font-family: monospace; }
+    </style>
+</head>
+<body>
+<h1>PriceFinder API Test</h1>
+
+<div class="section">
+    <h3>Текстовий пошук</h3>
+    <input type="text" id="query" placeholder="Введіть назву продукту" value="iPhone 15 Pro">
+    <button onclick="searchProduct()">Знайти</button>
+    <div id="results" class="results" style="display:none;"></div>
+</div>
+
+<div class="section">
+    <h3>Пошук за фото</h3>
+    <input type="file" id="image" accept="image/*">
+    <button onclick="analyzeImage()">Аналізувати</button>
+    <div id="imageResults" class="results" style="display:none;"></div>
+</div>
+
+<script>
+    async function searchProduct() {
+        const query = document.getElementById('query').value;
+        const results = document.getElementById('results');
+
+        if (!query) return;
+
+        results.style.display = 'block';
+        results.textContent = 'Шукаємо...';
+
+        try {
+            const formData = new FormData();
+            formData.append('text_query', query);
+
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            results.textContent = JSON.stringify(data, null, 2);
+
+        } catch (error) {
+            results.textContent = 'Помилка: ' + error.message;
+        }
+    }
+
+    async function analyzeImage() {
+        const fileInput = document.getElementById('image');
+        const results = document.getElementById('imageResults');
+
+        if (!fileInput.files[0]) return;
+
+        results.style.display = 'block';
+        results.textContent = 'Аналізуємо зображення...';
+
+        try {
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            results.textContent = JSON.stringify(data, null, 2);
+
+        } catch (error) {
+            results.textContent = 'Помилка: ' + error.message;
+        }
+    }
+</script>
+</body>
+</html>
