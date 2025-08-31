@@ -253,7 +253,7 @@
                     selectedProduct = mockProducts[Math.floor(Math.random() * mockProducts.length)];
                     productName.value = selectedProduct.name;
                 }
-
+                window.scrollTo(0, window.innerHeight -50);
                 // Генерація результатів з AI-аналізом
                 const mockResults = mockStores.map((store, index) => {
                     let priceVariation;
@@ -299,6 +299,7 @@
                 mockResults.sort((a, b) => a.price - b.price);
                 results.value = mockResults;
                 isAnalyzing.value = false;
+
             };
 
             const formatPrice = (price) => {
