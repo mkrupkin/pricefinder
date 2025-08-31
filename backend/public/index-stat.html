@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PriceFinder AI - Знайди найкращу ціну</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        .ai-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .ai-glow {
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .neural-bg {
+            background-image:
+                    radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 80%, rgba(56, 189, 248, 0.1) 0%, transparent 50%);
+        }
+
+        .ai-pulse {
+            animation: ai-pulse 2s infinite;
+        }
+
+        @keyframes ai-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .neon-border {
+            border: 2px solid;
+            border-image: linear-gradient(45deg, #667eea, #764ba2, #38bdf8) 1;
+        }
+
+        .ai-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tech-pattern {
+            background-image:
+                    linear-gradient(90deg, rgba(102, 126, 234, 0.1) 50%, transparent 50%),
+                    linear-gradient(rgba(118, 75, 162, 0.1) 50%, transparent 50%);
+            background-size: 20px 20px;
+        }
+
+        .hologram {
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
+            background-size: 200% 200%;
+            animation: hologram 3s ease-in-out infinite;
+        }
+
+        @keyframes hologram {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+    </style>
+</head>
+<body class="neural-bg">
+<div id="app"></div>
+
+<script>
+    const { createApp, ref, reactive, computed, watch } = Vue;
+
+    createApp({
+        setup() {
+            // Reactive state
+            const selectedImage = ref(null);
+            const isAnalyzing = ref(false);
+            const results = ref([]);
+            const productName = ref('');
+            const viewMode = ref('list'); // list, map
+            const selectedStore = ref(null);
+            const searchMode = ref('photo'); // photo, text
+            const textQuery = ref('');
+
+            // Mock data
+            const mockStores = reactive([
+                {
+                    name: 'Rozetka',
+                    logo: '🛒',
+                    color: 'bg-gradient-to-r from-green-500 to-green-600',
+                    rating: 4.8,
+                    type: 'local',
+                    location: { lat: 50.4501, lng: 30.5234, address: 'вул. Хрещатик, 22, Київ' },
+                    contact: { phone: '+380 44 537 02 22', email: 'info@rozetka.com.ua', website: 'rozetka.com.ua' },
+                    deliveryTime: '1-2 дні',
+                    sellerType: 'Офіційний магазин'
+                },
+                {
+                    name: 'Amazon',
+                    logo: '📦',
+                    color: 'bg-gradient-to-r from-gray-700 to-gray-900',
+                    rating: 4.5,
+                    type: 'international',
+                    location: { lat: 50.4501, lng: 30.5234, address: 'Amazon Global, США' },
+                    contact: { phone: '+1 888 xxx xxxx', email: 'support@amazon.com', website: 'amazon.com' },
+                    deliveryTime: '5-12 днів',
+                    sellerType: 'Amazon або партнер'
+                },
+                {
+                    name: 'AliExpress',
+                    logo: '🏮',
+                    color: 'bg-gradient-to-r from-red-500 to-orange-500',
+                    rating: 4.3,
+                    type: 'international',
+                    location: { lat: 50.4501, lng: 30.5234, address: 'Доставка з Китаю' },
+                    contact: { phone: '+86 571 xxx xxxx', email: 'service@aliexpress.com', website: 'aliexpress.com' },
+                    deliveryTime: '10-25 днів',
+                    sellerType: 'Китайський продавець'
+                },
+                {
+                    name: 'eBay',
+                    logo: '🏷️',
+                    color: 'bg-gradient-to-r from-blue-500 to-purple-600',
+                    rating: 4.4,
+                    type: 'marketplace',
+                    location: { lat: 50.4501, lng: 30.5234, address: 'eBay Global' },
+                    contact: { phone: '+1 866 xxx xxxx', email: 'support@ebay.com', website: 'ebay.com' },
+                    deliveryTime: '7-14 днів',
+                    sellerType: 'Глобальний маркетплейс'
+                },
+                {
+                    name: 'OLX',
+                    logo: '💼',
+                    color: 'bg-gradient-to-r from-purple-500 to-purple-700',
+                    rating: 4.2,
+                    type: 'marketplace',
+                    location: { lat: 50.4403, lng: 30.5176, address: 'Приватний продавець, Київ' },
+                    contact: { phone: '+380 67 123 45 67', email: 'seller@example.com', website: 'olx.ua' },
+                    deliveryTime: '3-7 днів',
+                    sellerType: 'Приватний продавець'
+                },
+                {
+                    name: 'Prom.ua',
+                    logo: '🛍️',
+                    color: 'bg-gradient-to-r from-yellow-500 to-orange-500',
+                    rating: 4.6,
+                    type: 'local',
+                    location: { lat: 50.4547, lng: 30.5238, address: 'вул. Володимирська, 15, Київ' },
+                    contact: { phone: '+380 800 300 100', email: 'support@prom.ua', website: 'prom.ua' },
+                    deliveryTime: '1-3 дні',
+                    sellerType: 'Верифікований продавець'
+                }
+            ]);
+
+            const mockProducts = reactive([
+                {
+                    name: 'iPhone 15 Pro 128GB',
+                    category: 'Смартфони',
+                    basePrice: 45000,
+                    description: 'Титановий корпус, чіп A17 Pro, подвійна камера 48MP'
+                },
+                {
+                    name: 'Samsung Galaxy S24 Ultra',
+                    category: 'Смартфони',
+                    basePrice: 52000,
+                    description: 'AI-камера 200MP, S Pen, 6.8" Dynamic AMOLED дисплей'
+                },
+                {
+                    name: 'MacBook Air M3',
+                    category: 'Ноутбуки',
+                    basePrice: 65000,
+                    description: '13.6" Liquid Retina, чіп M3, до 18 годин роботи'
+                },
+                {
+                    name: 'PlayStation 5',
+                    category: 'Ігрові приставки',
+                    basePrice: 22000,
+                    description: 'Консоль нового покоління з SSD та 3D звуком'
+                }
+            ]);
+
+            // Computed properties
+            const minPrice = computed(() => {
+                if (results.value.length === 0) return 0;
+                return Math.min(...results.value.map(r => r.price));
+            });
+
+            const maxPrice = computed(() => {
+                if (results.value.length === 0) return 0;
+                return Math.max(...results.value.map(r => r.price));
+            });
+
+            const internationalCount = computed(() => {
+                return results.value.filter(r => r.type === 'international').length;
+            });
+
+            const localCount = computed(() => {
+                return results.value.filter(r => r.type === 'local').length;
+            });
+
+            // Methods
+            const handleImageUpload = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        selectedImage.value = e.target.result;
+                        results.value = [];
+                        productName.value = '';
+                        textQuery.value = '';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const analyzeImage = async () => {
+                if (searchMode.value === 'photo' && !selectedImage.value) return;
+                if (searchMode.value === 'text' && !textQuery.value.trim()) return;
+
+                isAnalyzing.value = true;
+                results.value = [];
+
+                // Симуляція AI-аналізу
+                await new Promise(resolve => setTimeout(resolve, 4000));
+
+                let selectedProduct;
+                if (searchMode.value === 'text') {
+                    productName.value = textQuery.value;
+                    selectedProduct = mockProducts.find(p =>
+                        p.name.toLowerCase().includes(textQuery.value.toLowerCase()) ||
+                        textQuery.value.toLowerCase().includes(p.name.toLowerCase().split(' ')[0])
+                    ) || {
+                        name: textQuery.value,
+                        category: 'Товари',
+                        basePrice: 15000 + Math.floor(Math.random() * 50000),
+                        description: `Товар за запитом: ${textQuery.value}`
+                    };
+                } else {
+                    selectedProduct = mockProducts[Math.floor(Math.random() * mockProducts.length)];
+                    productName.value = selectedProduct.name;
+                }
+
+                // Генерація результатів з AI-аналізом
+                const mockResults = mockStores.map((store, index) => {
+                    let priceVariation;
+
+                    switch(store.type) {
+                        case 'local':
+                            priceVariation = (Math.random() - 0.5) * 0.2;
+                            break;
+                        case 'marketplace':
+                            priceVariation = (Math.random() - 0.5) * 0.4;
+                            break;
+                        case 'international':
+                            priceVariation = (Math.random() - 0.7) * 0.6;
+                            break;
+                        default:
+                            priceVariation = (Math.random() - 0.5) * 0.3;
+                    }
+
+                    const price = Math.round(selectedProduct.basePrice * (1 + priceVariation));
+                    const discount = Math.random() > 0.6 ? Math.floor(Math.random() * 25) + 5 : 0;
+                    const originalPrice = discount > 0 ? Math.round(price / (1 - discount / 100)) : null;
+
+                    return {
+                        id: index,
+                        store: store.name,
+                        logo: store.logo,
+                        color: store.color,
+                        price: price,
+                        originalPrice: originalPrice,
+                        discount: discount,
+                        availability: Math.random() > 0.2 ? 'В наявності' : 'Під замовлення',
+                        rating: store.rating,
+                        reviews: Math.floor(Math.random() * 500) + 50,
+                        delivery: store.deliveryTime,
+                        location: store.location,
+                        contact: store.contact,
+                        type: store.type,
+                        sellerType: store.sellerType,
+                        aiScore: (Math.random() * 30 + 70).toFixed(1)
+                    };
+                });
+
+                mockResults.sort((a, b) => a.price - b.price);
+                results.value = mockResults;
+                isAnalyzing.value = false;
+            };
+
+            const formatPrice = (price) => {
+                return new Intl.NumberFormat('uk-UA', {
+                    style: 'currency',
+                    currency: 'UAH',
+                    maximumFractionDigits: 0
+                }).format(price);
+            };
+
+            const getDeliveryIcon = (type) => {
+                switch(type) {
+                    case 'local': return 'fas fa-truck text-green-600';
+                    case 'international': return 'fas fa-plane text-blue-600';
+                    case 'wholesale': return 'fas fa-ship text-orange-600';
+                    default: return 'fas fa-box text-gray-600';
+                }
+            };
+
+            const getTypeLabel = (type) => {
+                switch(type) {
+                    case 'local': return 'Локальний';
+                    case 'international': return 'Глобальний';
+                    case 'marketplace': return 'Маркетплейс';
+                    default: return 'Магазин';
+                }
+            };
+
+            const setPhotoMode = () => {
+                searchMode.value = 'photo';
+                textQuery.value = '';
+                results.value = [];
+                productName.value = '';
+            };
+
+            const setTextMode = () => {
+                searchMode.value = 'text';
+                selectedImage.value = null;
+                results.value = [];
+                productName.value = '';
+            };
+
+            const selectStore = (store) => {
+                selectedStore.value = store;
+            };
+
+            const setSuggestion = (suggestion) => {
+                textQuery.value = suggestion;
+            };
+
+            const handleKeyPress = (event) => {
+                if (event.key === 'Enter' && !isAnalyzing.value && textQuery.value.trim()) {
+                    analyzeImage();
+                }
+            };
+
+            const callStore = (phone) => {
+                window.open(`tel:${phone}`, '_self');
+            };
+
+            const emailStore = (email) => {
+                window.open(`mailto:${email}`, '_self');
+            };
+
+            const getMarkerPosition = (index) => {
+                return {
+                    left: (20 + (index % 3) * 25 + Math.random() * 10) + '%',
+                    top: (25 + Math.floor(index / 3) * 30 + Math.random() * 10) + '%'
+                };
+            };
+
+            const getRandomClass = () => {
+                const rand = Math.random();
+                if (rand > 0.7) return 'bg-gradient-to-br from-blue-100 to-purple-100';
+                if (rand > 0.8) return 'bg-gradient-to-br from-green-100 to-blue-100';
+                return 'bg-gradient-to-br from-purple-100 to-pink-100';
+            };
+
+            const getRandomProgressState = () => {
+                return Math.random() > 0.5 ? 'bg-gradient-to-r from-green-500 to-blue-500' : 'bg-gradient-to-r from-purple-500 to-pink-500 ai-pulse';
+            };
+
+            return {
+                selectedImage,
+                isAnalyzing,
+                results,
+                productName,
+                viewMode,
+                selectedStore,
+                searchMode,
+                textQuery,
+                minPrice,
+                maxPrice,
+                internationalCount,
+                localCount,
+                handleImageUpload,
+                analyzeImage,
+                formatPrice,
+                getDeliveryIcon,
+                getTypeLabel,
+                setPhotoMode,
+                setTextMode,
+                selectStore,
+                setSuggestion,
+                handleKeyPress,
+                callStore,
+                emailStore,
+                getMarkerPosition,
+                getRandomClass,
+                getRandomProgressState
+            };
+        },
+
+        template: `
+                <div class="min-h-screen neural-bg">
+                    <!-- Header -->
+            <header class="ai-card shadow-lg border-b border-white/20">
+            <div class="max-w-6xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+            <div class="ai-gradient p-3 rounded-xl ai-glow floating relative">
+            <i class="fas fa-search-dollar text-white text-2xl sm:text-3xl"></i>
+            <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full ai-pulse"></div>
+            </div>
+            <div>
+            <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+            PriceFinder AI
+            </h1>
+            <p class="text-sm sm:text-base text-gray-600">
+            Штучний інтелект знайде найкращу ціну • Аналіз 200+ платформ світу
+            </p>
+            </div>
+            </div>
+
+            <div class="hidden sm:flex items-center space-x-4">
+            <div class="flex items-center space-x-2 text-sm text-gray-600">
+            <i class="fas fa-robot text-purple-600"></i>
+            <span>AI активний</span>
+            <div class="w-2 h-2 bg-green-400 rounded-full ai-pulse"></div>
+            </div>
+            </div>
+            </div>
+            </div>
+            </header>
+
+            <main class="max-w-6xl mx-auto px-4 py-8">
+            <!-- Main Search Section -->
+            <div class="ai-card rounded-2xl shadow-xl p-8 mb-8 relative overflow-hidden">
+
+            <div class="relative z-10">
+
+
+            <!-- AI Mode Toggle -->
+            <div class="flex items-center justify-center mb-8">
+            <div class="ai-gradient p-1 rounded-xl shadow-lg">
+            <div class="bg-white/10 backdrop-blur p-1 rounded-lg flex items-center space-x-2">
+            <button
+            @click="setPhotoMode"
+            :class="[
+            'flex items-center space-x-2 px-6 py-3 rounded-lg transition-all font-semibold',
+            searchMode === 'photo'
+            ? 'bg-white text-purple-600 shadow-lg'
+            : 'text-white hover:bg-white/20'
+            ]"
+            >
+            <i class="fas fa-camera text-lg"></i>
+            <span>ШІ-аналіз фото</span>
+            </button>
+            <button
+            @click="setTextMode"
+            :class="[
+            'flex items-center space-x-2 px-6 py-3 rounded-lg transition-all font-semibold',
+            searchMode === 'text'
+            ? 'bg-white text-purple-600 shadow-lg'
+            : 'text-white hover:bg-white/20'
+            ]"
+            >
+            <i class="fas fa-brain text-lg"></i>
+            <span>Розумний пошук</span>
+            </button>
+            </div>
+            </div>
+            </div>
+
+            <!-- Photo Search Mode -->
+            <div v-if="searchMode === 'photo'" class="flex flex-col items-center space-y-6">
+            <div v-if="!selectedImage">
+            <label class="cursor-pointer group block">
+            <div class="neon-border rounded-2xl p-12 w-full max-w-lg h-72 flex flex-col items-center justify-center transition-all group-hover:shadow-2xl group-hover:scale-105 bg-gradient-to-br from-purple-50 to-blue-50 relative overflow-hidden">
+            <div class="absolute inset-0 hologram opacity-20"></div>
+            <div class="relative z-10 text-center">
+            <div class="mb-6">
+            <i class="fas fa-cloud-upload-alt text-6xl text-purple-600 group-hover:text-blue-600 transition-colors ai-pulse"></i>
+            </div>
+            <p class="text-xl font-bold text-gray-800 mb-3">
+            ШІ проаналізує ваше фото
+            </p>
+            <p class="text-sm text-gray-600">
+            PNG, JPG або WEBP (макс. 10MB)<br>
+            Розпізнавання будь-яких товарів за допомогою AI
+            </p>
+            </div>
+            </div>
+            <input type="file" class="hidden" accept="image/*" @change="handleImageUpload" />
+            </label>
+            </div>
+
+            <div v-else class="space-y-6">
+            <div class="relative">
+            <img :src="selectedImage" alt="Завантажене зображення"
+            class="w-full max-w-lg h-72 object-cover rounded-2xl shadow-2xl neon-border" />
+            <div class="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center space-x-1">
+            <i class="fas fa-check"></i>
+            <span>Готово до аналізу</span>
+            </div>
+            </div>
+            <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 justify-center">
+            <label class="cursor-pointer bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-xl transition-all font-semibold text-center">
+            <span>Змінити фото</span>
+            <input type="file" class="hidden" accept="image/*" @change="handleImageUpload" />
+            </label>
+            <button
+            @click="analyzeImage"
+            :disabled="isAnalyzing"
+            class="ai-gradient hover:shadow-2xl text-white px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 hover:scale-105"
+            >
+            <i v-if="isAnalyzing" class="fas fa-spinner fa-spin"></i>
+            <i v-else class="fas fa-brain"></i>
+            <span>{{ isAnalyzing ? 'ШІ аналізує товар...' : 'Запустити ШІ-аналіз' }}</span>
+            </button>
+            </div>
+            </div>
+            </div>
+
+            <!-- Text Search Mode -->
+            <div v-else class="w-full max-w-3xl mx-auto space-y-6">
+            <div class="relative">
+            <i class="fas fa-brain absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-600 text-xl ai-pulse"></i>
+            <input
+            type="text"
+            placeholder="Опишіть товар - ШІ зрозуміє будь-який опис (наприклад: телефон з хорошою камерою, ноутбук для ігор, навушники без проводів)"
+            v-model="textQuery"
+            @keypress="handleKeyPress"
+            class="w-full pl-12 pr-6 py-5 border-2 border-purple-300 rounded-xl focus:border-purple-500 focus:outline-none text-lg bg-white/80 backdrop-blur shadow-lg"
+            />
+            <div class="absolute right-4 top-1/2 transform -translate-y-1/2">
+            <div class="flex items-center space-x-2 text-sm text-gray-500">
+            <i class="fas fa-magic"></i>
+            <span>AI готовий</span>
+            </div>
+            </div>
+            </div>
+
+            <div class="flex justify-center">
+            <button
+            @click="analyzeImage"
+            :disabled="isAnalyzing || !textQuery.trim()"
+            class="ai-gradient hover:shadow-2xl text-white px-10 py-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-3 hover:scale-105 text-lg"
+            >
+            <i v-if="isAnalyzing" class="fas fa-spinner fa-spin text-xl"></i>
+            <i v-else class="fas fa-brain text-xl"></i>
+            <span>{{ isAnalyzing ? 'ШІ шукає товар...' : 'Запустити ШІ-пошук' }}</span>
+            </button>
+            </div>
+
+            <!-- AI suggestions -->
+            <div class="mt-8">
+            <p class="text-center text-gray-600 mb-4 flex items-center justify-center space-x-2">
+            <i class="fas fa-lightbulb text-yellow-500"></i>
+            <span>Приклади запитів для ШІ:</span>
+            </p>
+            <div class="flex flex-wrap justify-center gap-3">
+            <button
+            v-for="suggestion in ['бездротові навушники', 'телефон з хорошою камерою', 'ноутбук для студентів', 'консоль для ігор', 'розумна колонка', 'планшет для малювання']"
+            :key="suggestion"
+            @click="setSuggestion(suggestion)"
+            class="px-4 py-2 bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200 text-purple-700 rounded-full transition-all hover:scale-105 font-medium"
+            >
+            {{ suggestion }}
+            </button>
+            </div>
+            </div>
+            </div>
+            </div>
+            </div>
+
+            <!-- AI Analysis Loading -->
+            <div v-if="isAnalyzing" class="ai-card rounded-2xl shadow-xl p-8 text-center mb-8 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-green-500/10 animate-pulse"></div>
+            <div class="relative z-10">
+            <div class="flex items-center justify-center space-x-4 mb-6">
+            <i class="fas fa-brain fa-spin text-4xl text-purple-600"></i>
+            <div class="flex space-x-1">
+            <div class="w-3 h-3 bg-purple-600 rounded-full animate-bounce"></div>
+            <div class="w-3 h-3 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+            <div class="w-3 h-3 bg-green-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+            </div>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">
+            {{ searchMode === 'photo' ? 'ШІ аналізує фото...' : 'ШІ шукає товар...' }}
+            </h3>
+            <p class="text-gray-600 mb-6">
+            <span v-if="searchMode === 'photo'">ШІ розпізнає товар і пошукає найкращі ціни на всіх доступних платформах</span>
+            <span v-else>ШІ аналізує "{{ textQuery }}" і шукає на 200+ платформах по всьому світу</span>
+            </p>
+
+            <!-- AI Analysis Progress -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div v-for="platform in ['Amazon', 'eBay', 'Rozetka', 'OLX', 'AliExpress', 'Prom', 'Hotline', 'Price']"
+            :key="platform"
+            class="ai-card rounded-lg p-3 text-sm flex items-center justify-center space-x-2 border">
+            <div :class="'w-2 h-2 rounded-full ' + getRandomProgressState()"></div>
+            <span class="font-medium">{{ platform }}</span>
+            </div>
+            </div>
+
+            <div class="bg-gray-200 rounded-full h-3 overflow-hidden">
+            <div class="ai-gradient h-3 rounded-full ai-pulse transition-all duration-1000" style="width: 85%"></div>
+            </div>
+            </div>
+            </div>
+
+            <!-- AI Results -->
+            <div v-if="results.length > 0" class="space-y-8">
+            <!-- Results Header -->
+            <div class="ai-card rounded-2xl shadow-xl p-6 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-green-500/5 via-blue-500/5 to-purple-500/5"></div>
+            <div class="relative z-10">
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 space-y-4 lg:space-y-0">
+            <div class="flex items-center space-x-4">
+            <div class="ai-gradient p-4 rounded-2xl shadow-lg">
+            <i v-if="searchMode === 'photo'" class="fas fa-camera text-2xl text-white"></i>
+            <i v-else class="fas fa-brain text-2xl text-white"></i>
+            </div>
+            <div>
+            <h3 class="text-2xl font-bold text-gray-900">
+            {{ searchMode === 'photo' ? 'ШІ розпізнав товар:' : 'ШІ знайшов товар:' }}
+            </h3>
+            <p class="text-xl text-purple-600 font-bold">{{ productName }}</p>
+            <p v-if="searchMode === 'text'" class="text-sm text-gray-500">ШІ-аналіз запиту: "{{ textQuery }}"</p>
+            </div>
+            </div>
+
+            <!-- View Toggle -->
+            <div class="flex items-center space-x-2 ai-gradient p-1 rounded-xl">
+            <button
+            @click="viewMode = 'list'"
+            :class="[
+            'flex items-center space-x-2 px-4 py-2 rounded-lg transition-all font-semibold',
+            viewMode === 'list'
+            ? 'bg-white text-purple-600 shadow-lg'
+            : 'text-white hover:bg-white/20'
+            ]"
+            >
+            <i class="fas fa-list"></i>
+            <span>Список</span>
+            </button>
+            <button
+            @click="viewMode = 'map'"
+            :class="[
+            'flex items-center space-x-2 px-4 py-2 rounded-lg transition-all font-semibold',
+            viewMode === 'map'
+            ? 'bg-white text-purple-600 shadow-lg'
+            : 'text-white hover:bg-white/20'
+            ]"
+            >
+            <i class="fas fa-map"></i>
+            <span>Карта</span>
+            </button>
+            </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="flex items-center space-x-2 bg-purple-50 rounded-lg p-3">
+            <i class="fas fa-brain text-purple-600"></i>
+            <span class="font-semibold">ШІ знайшов {{ results.length }} варіантів</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-green-50 rounded-lg p-3">
+            <i class="fas fa-star text-green-600"></i>
+            <span class="font-semibold">Найкраща: {{ formatPrice(minPrice) }}</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-blue-50 rounded-lg p-3">
+            <i class="fas fa-globe text-blue-600"></i>
+            <span class="font-semibold">{{ internationalCount }} глобальних</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-orange-50 rounded-lg p-3">
+            <i class="fas fa-map-marker-alt text-orange-600"></i>
+            <span class="font-semibold">{{ localCount }} локальних</span>
+            </div>
+            </div>
+            </div>
+            </div>
+
+            <!-- Results List -->
+            <div v-if="viewMode === 'list'" class="space-y-6">
+            <h3 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
+            ШІ-аналіз цін по всіх платформах:
+            </h3>
+
+            <div v-for="(result, index) in results"
+            :key="result.id"
+            class="ai-card rounded-2xl shadow-xl p-6 hover:shadow-2xl transition-all border-l-4 border-purple-500 relative overflow-hidden group"
+            >
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative z-10">
+            <div class="flex flex-col lg:flex-row items-start justify-between space-y-6 lg:space-y-0">
+            <div class="flex items-start space-x-4 flex-1">
+            <div :class="result.color + ' p-4 rounded-2xl text-white text-2xl shadow-lg relative floating'">
+            {{ result.logo }}
+            <div class="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-xs">
+            <i class="fas fa-check text-white"></i>
+            </div>
+            </div>
+
+            <div class="flex-1">
+            <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-3">
+            <h4 class="text-xl font-bold text-gray-900">{{ result.store }}</h4>
+            <div class="flex flex-wrap items-center gap-2">
+            <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-semibold">
+            {{ getTypeLabel(result.type) }}
+            </span>
+            <span v-if="index === 0" class="bg-gradient-to-r from-green-500 to-blue-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+            🏆 Найкраща ціна
+            </span>
+            <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
+            ШІ-рейтинг: {{ result.aiScore }}%
+            </span>
+            </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <div class="bg-gray-50 rounded-lg p-3 space-y-2">
+            <div class="flex items-center space-x-2 text-sm">
+            <i class="fas fa-star text-yellow-500"></i>
+            <span class="font-semibold">{{ result.rating }}</span>
+            <span class="text-gray-500">({{ result.reviews }} відгуків)</span>
+            </div>
+            <div class="flex items-center space-x-2 text-sm">
+            <i class="fas fa-user-check text-blue-500"></i>
+            <span>{{ result.sellerType }}</span>
+            </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+            <div class="flex items-center space-x-2">
+            <i :class="getDeliveryIcon(result.type)"></i>
+            <span>{{ result.delivery }}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+            <i class="fas fa-map-marker-alt text-gray-500"></i>
+            <span class="truncate">{{ result.location.address }}</span>
+            </div>
+            </div>
+            </div>
+
+            <!-- Contact buttons -->
+            <div class="flex flex-wrap gap-2">
+            <button
+            @click="callStore(result.contact.phone)"
+            class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-semibold flex items-center space-x-1 transition-all hover:scale-105"
+            >
+            <i class="fas fa-phone"></i>
+            <span>Зателефонувати</span>
+            </button>
+            <button class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-lg text-sm font-semibold flex items-center space-x-1 transition-all hover:scale-105">
+            <i class="fas fa-envelope"></i>
+            <span>Email</span>
+            </button>
+            <button class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold flex items-center space-x-1 transition-all hover:scale-105">
+            <i class="fas fa-globe"></i>
+            <span>Сайт</span>
+            </button>
+            </div>
+            </div>
+            </div>
+
+            <!-- Price section -->
+            <div class="lg:ml-6 text-center lg:text-right">
+            <div class="mb-4">
+            <div class="flex items-center justify-center lg:justify-end space-x-2 mb-2">
+            <span v-if="result.originalPrice" class="text-gray-500 line-through text-lg">
+            {{ formatPrice(result.originalPrice) }}
+            </span>
+            <span class="text-3xl font-bold text-gray-900">
+            {{ formatPrice(result.price) }}
+            </span>
+            <span v-if="result.discount > 0" class="bg-red-500 text-white px-2 py-1 rounded-full text-sm font-bold">
+            -{{ result.discount }}%
+            </span>
+            </div>
+            <span :class="[
+            'inline-block px-3 py-1 rounded-full text-sm font-bold',
+            result.availability === 'В наявності'
+            ? 'bg-green-100 text-green-700'
+            : 'bg-yellow-100 text-yellow-700'
+            ]">
+            {{ result.availability }}
+            </span>
+            </div>
+
+            <button class="ai-gradient hover:shadow-lg text-white px-6 py-3 rounded-xl font-bold transition-all flex items-center space-x-2 hover:scale-105 w-full lg:w-auto justify-center">
+            <i class="fas fa-shopping-cart"></i>
+            <span>В магазин</span>
+            <i class="fas fa-external-link-alt"></i>
+            </button>
+            </div>
+            </div>
+            </div>
+            </div>
+            </div>
+
+            <!-- Map View -->
+            <div v-else class="ai-card rounded-2xl shadow-xl p-6">
+            <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+            <h3 class="text-2xl font-bold text-gray-900">ШІ-карта магазинів</h3>
+            <div class="flex items-center space-x-2 text-gray-600">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Київ та світ</span>
+            </div>
+            </div>
+
+            <!-- Map simulation with AI styling -->
+            <div class="relative rounded-2xl h-96 overflow-hidden shadow-inner" :class="getRandomClass()">
+            <!-- Neural network background -->
+            <div class="absolute inset-0 opacity-30">
+            <div class="grid grid-cols-10 grid-rows-10 h-full w-full">
+            <div v-for="i in 100"
+            :key="i"
+            class="border border-purple-200 bg-gradient-to-br from-white/20 to-purple-100/20">
+            </div>
+            </div>
+            </div>
+
+            <!-- Store markers -->
+            <div v-for="(result, index) in results.slice(0, 6)"
+            :key="result.id"
+            class="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group"
+            :style="getMarkerPosition(index)"
+            @click="selectStore(result)"
+            >
+            <div :class="result.color + ' p-3 rounded-full shadow-2xl group-hover:scale-125 transition-all ai-glow'">
+            <span class="text-white text-xl">{{ result.logo }}</span>
+            </div>
+            <div class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-3 py-1 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap backdrop-blur">
+            {{ result.store }} - {{ formatPrice(result.price) }}
+            </div>
+            </div>
+
+            <!-- AI Map controls -->
+            <div class="absolute bottom-4 right-4 flex flex-col space-y-2">
+            <button class="ai-gradient p-2 rounded-lg shadow-lg text-white hover:scale-110 transition-all">+</button>
+            <button class="ai-gradient p-2 rounded-lg shadow-lg text-white hover:scale-110 transition-all">−</button>
+            <button class="ai-gradient p-2 rounded-lg shadow-lg text-white hover:scale-110 transition-all">
+            <i class="fas fa-brain"></i>
+            </button>
+            </div>
+
+            <!-- AI Legend -->
+            <div class="absolute top-4 left-4 ai-card p-4 rounded-lg shadow-xl">
+            <h4 class="font-bold text-sm mb-3 flex items-center space-x-2">
+            <i class="fas fa-brain text-purple-600"></i>
+            <span>ШІ-легенда</span>
+            </h4>
+            <div class="space-y-2 text-xs">
+            <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-gradient-to-r from-green-500 to-green-600 rounded-full"></div>
+            <span>Локальні магазини</span>
+            </div>
+            <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full"></div>
+            <span>Маркетплейси</span>
+            </div>
+            <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"></div>
+            <span>Глобальні</span>
+            </div>
+            </div>
+            </div>
+            </div>
+
+            <!-- Selected store info with AI styling -->
+            <div v-if="selectedStore" class="mt-6 ai-card rounded-xl p-6 border border-purple-200">
+            <div class="flex items-center space-x-4 mb-4">
+            <div :class="selectedStore.color + ' p-3 rounded-2xl text-white text-2xl shadow-lg'">
+            {{ selectedStore.logo }}
+            </div>
+            <div>
+            <h4 class="text-xl font-bold text-gray-900">{{ selectedStore.store }}</h4>
+            <p class="text-gray-600">{{ selectedStore.location.address }}</p>
+            <p class="text-sm text-purple-600 font-semibold">ШІ-рейтинг: {{ selectedStore.aiScore }}%</p>
+            </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
+            <div>
+            <span class="font-semibold">Ціна:</span>
+            <span class="text-2xl font-bold text-purple-600">{{ formatPrice(selectedStore.price) }}</span>
+            </div>
+            <div>
+            <span class="font-semibold">Доставка:</span> {{ selectedStore.delivery }}
+            </div>
+            </div>
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+            <button
+            @click="callStore(selectedStore.contact.phone)"
+            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 transition-all hover:scale-105"
+            >
+            <i class="fas fa-phone"></i>
+            <span>Зателефонувати</span>
+            </button>
+            <button class="ai-gradient text-white px-4 py-2 rounded-lg hover:scale-105 transition-all">
+            ШІ-маршрут
+            </button>
+            </div>
+            </div>
+            </div>
+            </div>
+            </main>
+            </div>
+            `
+        }).mount('#app');
+    </script>
+</body>
+</html>
