@@ -2,7 +2,7 @@
 // backend/setup_database.php
 // Створення таблиць та початкових даних
 
-require_once '../vendor/autoload.php';
+require_once 'vendor/autoload.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
@@ -21,7 +21,7 @@ try {
     echo "Підключення до бази даних успішне!\n\n";
 
     // Читаємо та виконуємо SQL файл
-    $sql = file_get_contents(__DIR__ . '../database/migrations/001_create_tables.sql');
+    $sql = file_get_contents(__DIR__ . '/database/migrations/001_create_tables.sql');
 
     // Розділяємо на окремі запити
     $statements = array_filter(
