@@ -46,7 +46,7 @@ try {
     $productData = null;
     $searchType = '';
     $searchQuery = '';
-
+    exit;
    if (isset($_POST['text_query']) && !empty(trim($_POST['text_query']))) {
         // Обробка текстового пошуку
         $searchQuery = trim($_POST['text_query']);
@@ -75,7 +75,7 @@ try {
             throw new Exception('Непідтримуваний тип файлу. Використовуйте JPEG, PNG або WebP.');
         }
 
-        exit;
+
         // Аналізуємо зображення
         $productData = $openaiService->analyzeProductImage($imageData, $userLocation);
         $searchType = 'photo';
