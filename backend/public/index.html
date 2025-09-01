@@ -221,7 +221,7 @@
                 requestData.text_query = data.textQuery.trim();
             }
 
-            const response = await axios.post(`${this.baseURL}/gpt`, requestData, {
+            const response = await axios.post(`${this.baseURL}/analyze`, requestData, {
                 timeout: 60000,
                 headers: {
                     'Content-Type': 'multipart/form-data'
