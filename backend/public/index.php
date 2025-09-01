@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-require_once '../../vendor/autoload.php';
+require_once '../vendor/autoload.php';
 
 try {
     // Завантажуємо конфігурацію
