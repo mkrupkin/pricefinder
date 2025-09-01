@@ -1,11 +1,12 @@
 <?php
 // backend/public/api/analyze.php
 // Головний endpoint для аналізу продуктів
-
+error_reporting(0);
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -30,8 +31,10 @@ try {
 
     // Визначаємо локацію користувача
     $userLocation = null;
+
     if (isset($_POST['user_location'])) {
-        $userLocation = json_decode($_POST['user_location'], true);
+        $userLocation = $_POST['user_location'];
+
     } else {
         $userLocation = [
             'country' => 'Ukraine',
@@ -45,32 +48,30 @@ try {
     $searchQuery = '';
 
     // Обробка завантаження зображення
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+    if (isset($_POST['image'])) {
         // Валідація зображення
         $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        $fileType = $_FILES['image']['type'];
-        $fileSize = $_FILES['image']['size'];
+        // Обробка фото
+        $imageData = $_POST['image'];
+        $imageName = $_POST['image_name'] ?? 'uploaded_image';
+        $imageType = $_POST['image_type'] ?? 'image/jpeg';
 
-        if (!in_array($fileType, $allowedTypes)) {
+
+        if (!in_array($imageType, $allowedTypes)) {
             throw new Exception('Непідтримуваний тип файлу. Використовуйте JPEG, PNG або WebP.');
         }
 
-        if ($fileSize > 10 * 1024 * 1024) { // 10MB
-            throw new Exception('Файл занадто великий. Максимальний розмір 10MB.');
-        }
-
-        // Читаємо та кодуємо зображення
-        $imageData = file_get_contents($_FILES['image']['tmp_name']);
-        $imageBase64 = base64_encode($imageData);
-
+        exit;
         // Аналізуємо зображення
-        $productData = $openaiService->analyzeProductImage($imageBase64, $userLocation);
+        $productData = $openaiService->analyzeProductImage($imageData, $userLocation);
         $searchType = 'photo';
-        $searchQuery = 'Зображення: ' . ($_FILES['image']['name'] ?? 'uploaded_image');
+        $searchQuery = 'Зображення: ' . $imageName;
+        // Видаляємо тимчасовий файл
 
-    } elseif (isset($_REQUEST['text_query']) && !empty(trim($_REQUEST['text_query']))) {
+
+    } elseif (isset($_POST['text_query']) && !empty(trim($_POST['text_query']))) {
         // Обробка текстового пошуку
-        $searchQuery = trim($_REQUEST['text_query']);
+        $searchQuery = trim($_POST['text_query']);
 
         if (strlen($searchQuery) < 2) {
             throw new Exception('Запит занадто короткий. Мінімум 2 символи.');

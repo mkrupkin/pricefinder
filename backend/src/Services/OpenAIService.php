@@ -8,7 +8,7 @@ class OpenAIService {
     private $client;
     private $apiKey;
     private $modelText = 'gpt-4';
-    private $modelVision = 'gpt-4-vision-preview';
+    private $modelVision = 'gpt-4-vision';
 
     public function __construct($apiKey) {
         $this->apiKey = $apiKey;
@@ -62,7 +62,7 @@ class OpenAIService {
         $data = [
             'model' => $this->modelText,
             'messages' => [
-                ['role' => 'system', 'content' => 'Ви експерт з пошуку товарів в Україні та світі. Надаєте точну інформацію про магазини та ціни.'],
+//                ['role' => 'system', 'content' => 'You are an expert in finding products in Ukraine and around the world. You provide accurate information about stores and prices.'],
                 ['role' => 'user', 'content' => $prompt]
             ],
             'max_tokens' => 2000,
@@ -70,9 +70,6 @@ class OpenAIService {
         ];
 
         $response = $this->makeRequest('chat/completions', $data);
-
-
-
         return $this->parseResponse($response, 'text');
     }
 
@@ -83,100 +80,104 @@ class OpenAIService {
         $location = $userLocation ?
             "{$userLocation['city']}, {$userLocation['country']}" :
             'Київ, Україна';
+        $currentYear = date('Y');
+        return "UNIVERSAL PRODUCT ANALYSIS
 
-        return "
-АНАЛІЗ ПРОДУКТУ ЗА ЗОБРАЖЕННЯМ
+Analyze this product image and provide comprehensive search results.
 
-Проаналізуйте це зображення продукту та знайдіть де його можна купити.
+TASK:
+1. Identify the exact product (brand, model, specifications)
+2. Find ALL possible places to buy this product globally
+3. Prioritize based on user location: {$location}
 
-ЗАВДАННЯ:
-1. Точно ідентифікуйте продукт (бренд, модель, характеристики)
-2. Знайдіть РЕАЛЬНІ магазини де можна купити цей продукт
-3. Пріоритет: {$location} та околиці
+SEARCH COVERAGE:
+🌍 GEOGRAPHIC SCOPE:
+- Local stores in {$location} and nearby cities
+- National retailers in the country
+- International stores with shipping
+- Regional specialists and importers
+- Cross-border options (EU, US, Asia)
 
-ПОКРИТТЯ ПОШУКУ:
-🌍 ГЕОГРАФІЯ:
-- Локальні магазини в {$location}
-- Національні мережі України
-- Міжнародні магазини з доставкою
-- Спеціалізовані імпортери
+🏪 STORE TYPES TO INCLUDE:
+1. Official brand stores and authorized dealers
+2. Major e-commerce platforms (Amazon, eBay, local equivalents)
+3. Electronics retailers (Best Buy, local tech stores)
+4. Department stores and supermarkets
+5. Specialized niche retailers
+6. Marketplace sellers (Facebook, Instagram, Telegram)
+7. Wholesale and B2B suppliers
+8. Auction sites and bidding platforms
+9. Second-hand and refurbished dealers
+10. Local classified ads and forums
 
-🏪 ТИПИ МАГАЗИНІВ:
-1. Офіційні дилери та брендові магазини
-2. Великі e-commerce платформи (Rozetka, Amazon тощо)
-3. Електронні ритейлери та техномагазини
-4. Універмаги та супермаркети
-5. Спеціалізовані нішеві ритейлери
-6. Marketplace продавці
-7. Оптові постачальники
-8. Аукціони та біржі
-9. Секонд-хенд та відновлені товари
+📊 FOR EACH RESULT PROVIDE:
+- Store name and category
+- Estimated price in UAH (realistic for {$currentYear})
+- Original currency if different
+- Product availability status
+- Delivery time and shipping cost
+- Store contact info (website, phone, email)
+- Physical address if applicable
+- Store rating/reputation (if known)
+- Special offers or bulk discounts
+- Payment methods accepted
+- Return policy highlights
 
-📊 ДЛЯ КОЖНОГО РЕЗУЛЬТАТУ:
-- Назва магазину та категорія
-- Реалістична ціна в UAH (актуальна для 2024-2025)
-- Оригінальна валюта якщо інша
-- Статус наявності товару
-- Час доставки та вартість
-- Контактна інформація (сайт, телефон)
-- Фізична адреса якщо є
-- Рейтинг магазину
-- Спеціальні пропозиції
-- Способи оплати
-- Умови повернення
+🎯 REQUIREMENTS:
+- Minimum 15-30 results across different channels
+- Mix of local (40%), national (30%), international (30%)
+- Include budget, mid-range, and premium options
+- Consider shipping costs in total price
+- Factor in local taxes and import duties
+- Prioritize reliability and customer service
 
-ВИМОГИ:
-- Мінімум 10-20 результатів
-- Суміш: локальні (50%), національні (30%), міжнародні (20%)
-- Включити бюджетні та преміум варіанти
-- Враховувати вартість доставки
-- Враховувати податки та мита
+Minimum 10 results
 
-ВІДПОВІДЬ У JSON ФОРМАТІ:
+RESPOND IN VALID JSON FORMAT:
 {
   \"product_identification\": {
-    \"name\": \"точна назва продукту\",
-    \"brand\": \"виробник\",
-    \"model\": \"номер моделі\",
-    \"category\": \"категорія продукту\",
-    \"key_features\": [\"особливість1\", \"особливість2\"],
+    \"name\": \"exact product name\",
+    \"brand\": \"manufacturer\",
+    \"model\": \"model number\",
+    \"category\": \"product category\",
+    \"key_features\": [\"feature1\", \"feature2\"],
     \"confidence\": 0.95
   },
   \"search_results\": [
     {
-      \"store_name\": \"Назва магазину\",
+      \"store_name\": \"Store Name\",
       \"store_type\": \"official_retailer|marketplace|specialty|local\",
       \"price_uah\": 45000,
       \"original_price\": \"$1200 USD\",
-      \"availability\": \"В наявності|Під замовлення|Немає\",
-      \"delivery_time\": \"1-3 дні\",
+      \"availability\": \"In Stock|Pre-order|Out of Stock\",
+      \"delivery_time\": \"1-3 days\",
       \"shipping_cost_uah\": 150,
       \"total_cost_uah\": 45150,
       \"contact\": {
-        \"website\": \"store.com.ua\",
+        \"website\": \"store.com\",
         \"phone\": \"+380...\",
         \"email\": \"contact@store.com\",
-        \"address\": \"фізична адреса\"
+        \"address\": \"Physical address if applicable\"
       },
       \"location\": {
         \"country\": \"Ukraine\",
-        \"city\": \"Київ\",
+        \"city\": \"Kyiv\",
         \"region\": \"Local|National|International\"
       },
       \"rating\": 4.5,
       \"review_count\": 1250,
-      \"special_offers\": \"Безкоштовна доставка від 1000 UAH\",
-      \"payment_methods\": [\"Картка\", \"Готівка при отриманні\"],
-      \"return_policy\": \"14 днів повернення\",
-      \"notes\": \"додаткова інформація\"
+      \"special_offers\": \"Free shipping over 1000 UAH\",
+      \"payment_methods\": [\"Card\", \"Cash on delivery\", \"Bank transfer\"],
+      \"return_policy\": \"14 days return\",
+      \"notes\": \"Additional relevant information\"
     }
   ],
   \"market_analysis\": {
     \"price_range\": \"40000-55000 UAH\",
     \"average_price\": 47500,
-    \"best_local_deal\": \"найкращий локальний варіант\",
-    \"best_international_deal\": \"найкращий міжнародний варіант\",
-    \"recommendations\": [\"рекомендації щодо покупки\"]
+    \"best_local_deal\": \"Store with best local price\",
+    \"best_international_deal\": \"Store with best international price\",
+    \"recommendations\": [\"Specific buying recommendations\"]
   }
 }";
     }
@@ -184,103 +185,105 @@ class OpenAIService {
     /**
      * Створення промпту для текстового пошуку
      */
+    /**
+     * BUILD UNIVERSAL TEXT SEARCH PROMPT
+     */
     private function buildTextSearchPrompt($query, $userLocation) {
-        $location = $userLocation ?
-            "{$userLocation['city']}, {$userLocation['country']}" :
-            'Київ, Україна';
+        $location = $userLocation ?: 'Ukraine, Kyiv';
+        $currentYear = date('Y');
+
         return "
-УНІВЕРСАЛЬНИЙ ПОШУК ПРОДУКТУ: ".$query."
+UNIVERSAL PRODUCT SEARCH FOR: \"{$query}\"
 
-ЗАВДАННЯ:
-1. Точно ідентифікуйте продукт (бренд, модель, характеристики)
-2. Знайдіть РЕАЛЬНІ магазини де можна купити цей продукт
-3. Пріоритет: {$location} та околиці
+User location: {$location}
+Current year: {$currentYear}
 
-ПОКРИТТЯ ПОШУКУ:
-🌍 ГЕОГРАФІЯ:
-- Локальні магазини в {$location}
-- Національні мережі України
-- Міжнародні магазини з доставкою
-- Спеціалізовані імпортери
+SEARCH MISSION:
+Find ALL possible places to buy '{$query}' across every channel:
 
-🏪 ТИПИ МАГАЗИНІВ:
-1. Офіційні дилери та брендові магазини
-2. Великі e-commerce платформи (Rozetka, Amazon тощо)
-3. Електронні ритейлери та техномагазини
-4. Універмаги та супермаркети
-5. Спеціалізовані нішеві ритейлери
-6. Marketplace продавці
-7. Оптові постачальники
-8. Аукціони та біржі
-9. Секонд-хенд та відновлені товари
+🌍 COMPLETE MARKET SCAN:
+1. Official manufacturers and brand stores
+2. Major retailers (online + physical)  
+3. Local stores and regional chains
+4. Marketplaces (eBay, Amazon, local platforms)
+5. Social commerce (Facebook, Instagram, Telegram channels)
+6. Wholesale and B2B suppliers
+7. Specialized niche platforms
+8. Auction and bidding sites
+9. Second-hand and refurbished markets
+10. International stores with shipping
+11. Cross-border shopping opportunities
+12. Local classified ads and forums
 
-📊 ДЛЯ КОЖНОГО РЕЗУЛЬТАТУ:
-- Назва магазину та категорія
-- Реалістична ціна в UAH (актуальна для 2024-2025)
-- Оригінальна валюта якщо інша
-- Статус наявності товару
-- Час доставки та вартість
-- Контактна інформація (сайт, телефон)
-- Фізична адреса якщо є
-- Рейтинг магазину
-- Спеціальні пропозиції
-- Способи оплати
-- Умови повернення
+🎯 GEOGRAPHIC PRIORITIES:
+- Priority 1: Local stores in {$location} (40% of results)
+- Priority 2: National retailers (30% of results)
+- Priority 3: International with good shipping (30% of results)
 
-ВИМОГИ:
-- Мінімум 10-20 результатів
-- Суміш: локальні (50%), національні (30%), міжнародні (20%)
-- Включити бюджетні та преміум варіанти
-- Враховувати вартість доставки
-- Враховувати податки та мита
+📊 RESULT REQUIREMENTS:
+- 10-20 comprehensive results
+- Realistic pricing for {$currentYear}
+- Complete contact information
+- Delivery and payment options
+- Store reliability assessment
+- Special deals and offers
 
-ВІДПОВІДЬ У JSON ФОРМАТІ:
+If the product query is unclear or too generic, provide:
+- Clarification questions
+- Popular specific variants
+- Category recommendations
+
+
+Minimum 10 results
+
+RESPOND IN VALID JSON FORMAT:
 {
   \"product_identification\": {
-    \"name\": \"точна назва продукту\",
-    \"brand\": \"виробник\",
-    \"model\": \"номер моделі\",
-    \"category\": \"категорія продукту\",
-    \"key_features\": [\"особливість1\", \"особливість2\"],
+    \"name\": \"exact product name\",
+    \"brand\": \"manufacturer\",
+    \"model\": \"model number\",
+    \"category\": \"product category\",
+    \"key_features\": [\"feature1\", \"feature2\"],
     \"confidence\": 0.95
   },
   \"search_results\": [
     {
-      \"store_name\": \"Назва магазину\",
+      \"store_name\": \"Store Name\",
       \"store_type\": \"official_retailer|marketplace|specialty|local\",
       \"price_uah\": 45000,
       \"original_price\": \"$1200 USD\",
-      \"availability\": \"В наявності|Під замовлення|Немає\",
-      \"delivery_time\": \"1-3 дні\",
+      \"availability\": \"In Stock|Pre-order|Out of Stock\",
+      \"delivery_time\": \"1-3 days\",
       \"shipping_cost_uah\": 150,
       \"total_cost_uah\": 45150,
       \"contact\": {
-        \"website\": \"store.com.ua\",
+        \"website\": \"store.com\",
         \"phone\": \"+380...\",
         \"email\": \"contact@store.com\",
-        \"address\": \"фізична адреса\"
+        \"address\": \"Physical address if applicable\"
       },
       \"location\": {
         \"country\": \"Ukraine\",
-        \"city\": \"Київ\",
+        \"city\": \"Kyiv\",
         \"region\": \"Local|National|International\"
       },
       \"rating\": 4.5,
       \"review_count\": 1250,
-      \"special_offers\": \"Безкоштовна доставка від 1000 UAH\",
-      \"payment_methods\": [\"Картка\", \"Готівка при отриманні\"],
-      \"return_policy\": \"14 днів повернення\",
-      \"notes\": \"додаткова інформація\"
+      \"special_offers\": \"Free shipping over 1000 UAH\",
+      \"payment_methods\": [\"Card\", \"Cash on delivery\", \"Bank transfer\"],
+      \"return_policy\": \"14 days return\",
+      \"notes\": \"Additional relevant information\"
     }
   ],
   \"market_analysis\": {
     \"price_range\": \"40000-55000 UAH\",
     \"average_price\": 47500,
-    \"best_local_deal\": \"найкращий локальний варіант\",
-    \"best_international_deal\": \"найкращий міжнародний варіант\",
-    \"recommendations\": [\"рекомендації щодо покупки\"]
+    \"best_local_deal\": \"Store with best local price\",
+    \"best_international_deal\": \"Store with best international price\",
+    \"recommendations\": [\"Specific buying recommendations\"]
   }
-}";
+}
+";
     }
 
     /**
@@ -288,8 +291,7 @@ class OpenAIService {
      */
     private function makeRequest($endpoint, $data) {
         try {
-            print_r( $data);
-            exit;
+
             $response = $this->client->post($endpoint, [
                 'json' => $data
             ]);
@@ -366,7 +368,7 @@ class OpenAIService {
             throw new \Exception('Відсутні обовязкові поля у відповіді');
         }
 
-        if (!is_array($result['search_results']) || count($result['search_results']) < 3) {
+        if (!is_array($result['search_results']) || count($result['search_results']) < 2) {
             throw new \Exception('Недостатньо результатів пошуку (мінімум 3)');
         }
 
