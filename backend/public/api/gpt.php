@@ -47,8 +47,22 @@ try {
     $searchType = '';
     $searchQuery = '';
 
-    // Обробка завантаження зображення
-    if (isset($_POST['image'])) {
+   if (isset($_POST['text_query']) && !empty(trim($_POST['text_query']))) {
+        // Обробка текстового пошуку
+        $searchQuery = trim($_POST['text_query']);
+
+        if (strlen($searchQuery) < 2) {
+            throw new Exception('Запит занадто короткий. Мінімум 2 символи.');
+        }
+
+        if (strlen($searchQuery) > 500) {
+            throw new Exception('Запит занадто довгий. Максимум 500 символів.');
+        }
+
+        $productData = $openaiService->searchProductByText($searchQuery, $userLocation);
+        $searchType = 'text';
+
+    } else if (isset($_POST['image'])) {
         // Валідація зображення
         $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
         // Обробка фото
@@ -68,21 +82,6 @@ try {
         $searchQuery = 'Зображення: ' . $imageName;
         // Видаляємо тимчасовий файл
 
-
-    } elseif (isset($_POST['text_query']) && !empty(trim($_POST['text_query']))) {
-        // Обробка текстового пошуку
-        $searchQuery = trim($_POST['text_query']);
-
-        if (strlen($searchQuery) < 2) {
-            throw new Exception('Запит занадто короткий. Мінімум 2 символи.');
-        }
-
-        if (strlen($searchQuery) > 500) {
-            throw new Exception('Запит занадто довгий. Максимум 500 символів.');
-        }
-
-        $productData = $openaiService->searchProductByText($searchQuery, $userLocation);
-        $searchType = 'text';
 
     } else {
         throw new Exception('Не надано зображення або текстовий запит');
