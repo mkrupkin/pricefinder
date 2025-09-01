@@ -1,169 +1,154 @@
 <?php
 // backend/public/api/analyze.php
 // Головний endpoint для аналізу продуктів
-error_reporting(0);
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-require_once '../../vendor/autoload.php';
-
-try {
-    // Завантажуємо конфігурацію
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../..');
-    $dotenv->load();
-
-//    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-//        throw new Exception('Тільки POST метод дозволений', 405);
-//    }
-
-    $startTime = microtime(true);
-
-    // Ініціалізуємо сервіси
-    $openaiService = new \PriceFinder\Services\OpenAIService($_ENV['OPENAI_API_KEY']);
-
-    // Визначаємо локацію користувача
-    $userLocation = null;
-
-    if (isset($_POST['user_location'])) {
-        $userLocation = $_POST['user_location'];
-
-    } else {
-        $userLocation = [
-            'country' => 'Ukraine',
-            'city' => 'Kyiv',
-            'ip' => $_SERVER['REMOTE_ADDR'] ?? ''
-        ];
-    }
-
-    $productData = null;
-    $searchType = '';
-    $searchQuery = '';
-
-   if (isset($_POST['text_query']) && !empty(trim($_POST['text_query']))) {
-        // Обробка текстового пошуку
-        $searchQuery = trim($_POST['text_query']);
-
-        if (strlen($searchQuery) < 2) {
-            throw new Exception('Запит занадто короткий. Мінімум 2 символи.');
+echo  '{
+    "success": true,
+    "search_type": "text",
+    "processing_time_ms": 17743,
+    "timestamp": "2025-09-01T09:44:55+00:00",
+    "query": "iphone 16",
+    "user_location": {
+        "country": "Ukraine",
+        "city": "Kyiv",
+        "ip": "172.22.0.1"
+    },
+    "product": {
+        "name": "iPhone 16",
+        "brand": "Apple",
+        "model": "A2456",
+        "category": "Smartphones",
+        "key_features": [
+            "5G",
+            "ProMotion display",
+            "A16 chip",
+            "Triple camera system"
+        ],
+        "confidence": 0.95
+    },
+    "results": [
+        {
+            "store_name": "Rozetka",
+            "store_type": "marketplace",
+            "price_uah": 53000,
+            "original_price": "$1750 USD",
+            "availability": "In Stock",
+            "delivery_time": "1-2 days",
+            "shipping_cost_uah": 0,
+            "total_cost_uah": 53000,
+            "contact": {
+                "website": "rozetka.com.ua",
+                "phone": "+380...",
+                "email": "info@rozetka.com.ua",
+                "address": "Kyiv, Ukraine"
+            },
+            "location": {
+                "country": "Ukraine",
+                "city": "Kyiv",
+                "region": "Local"
+            },
+            "rating": 4.7,
+            "review_count": 3000,
+            "special_offers": "Free shipping",
+            "payment_methods": [
+                "Card",
+                "Cash on delivery",
+                "Bank transfer"
+            ],
+            "return_policy": "14 days return",
+            "notes": "Trusted marketplace",
+            "relevance_score": 0.9700000000000001,
+            "is_recommended": true,
+            "filters": {
+                "local": true,
+                "official": false,
+                "fast_delivery": true,
+                "low_price": true
+            }
+        },
+        {
+            "store_name": "Apple Store",
+            "store_type": "official_retailer",
+            "price_uah": 55000,
+            "original_price": "$1800 USD",
+            "availability": "In Stock",
+            "delivery_time": "1-3 days",
+            "shipping_cost_uah": 0,
+            "total_cost_uah": 55000,
+            "contact": {
+                "website": "apple.com",
+                "phone": "+380...",
+                "email": "contact@apple.com",
+                "address": "Not applicable"
+            },
+            "location": {
+                "country": "USA",
+                "city": "Cupertino",
+                "region": "International"
+            },
+            "rating": 4.8,
+            "review_count": 5000,
+            "special_offers": "Free shipping",
+            "payment_methods": [
+                "Card",
+                "Apple Pay"
+            ],
+            "return_policy": "14 days return",
+            "notes": "Official Apple Store",
+            "relevance_score": 0.88,
+            "is_recommended": true,
+            "filters": {
+                "local": false,
+                "official": true,
+                "fast_delivery": true,
+                "low_price": false
+            }
         }
-
-        if (strlen($searchQuery) > 500) {
-            throw new Exception('Запит занадто довгий. Максимум 500 символів.');
+    ],
+    "market_analysis": {
+        "price_range": "50000-60000 UAH",
+        "average_price": 55000,
+        "best_local_deal": "Rozetka",
+        "best_international_deal": "Apple Store",
+        "recommendations": [
+            "Buy from Rozetka for best local deal",
+            "Buy from Apple Store for international warranty"
+        ]
+    },
+    "report": {
+        "total_stores": 2,
+        "price_statistics": {
+            "min": 53000,
+            "max": 55000,
+            "average": 54000,
+            "median": 54000
+        },
+        "store_distribution": {
+            "local": 1,
+            "national": 0,
+            "international": 1
+        },
+        "availability_summary": {
+            "in_stock": 0,
+            "limited": 0,
+            "out_of_stock": 2
         }
+    },
+    "meta": {
+        "search_type": "text",
+        "search_timestamp": 1756719895,
+        "tokens_used": 1287,
+        "model_used": "gpt-4-0613",
+        "api_cost_usd": 0.0567,
+        "response_time_ms": 17743
+    },
+    "limited_results": false
+}';
 
-        $productData = $openaiService->searchProductByText($searchQuery, $userLocation);
-        $searchType = 'text';
-
-    } else if (isset($_POST['image'])) {
-        // Валідація зображення
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        // Обробка фото
-        $imageData = $_POST['image'];
-        $imageName = $_POST['image_name'] ?? 'uploaded_image';
-        $imageType = $_POST['image_type'] ?? 'image/jpeg';
-
-
-        if (!in_array($imageType, $allowedTypes)) {
-            throw new Exception('Непідтримуваний тип файлу. Використовуйте JPEG, PNG або WebP.');
-        }
-
-        exit;
-        // Аналізуємо зображення
-        $productData = $openaiService->analyzeProductImage($imageData, $userLocation);
-        $searchType = 'photo';
-        $searchQuery = 'Зображення: ' . $imageName;
-        // Видаляємо тимчасовий файл
-
-
-    } else {
-        throw new Exception('Не надано зображення або текстовий запит');
-    }
-
-    $endTime = microtime(true);
-    $processingTime = round(($endTime - $startTime) * 1000);
-
-    // Оновлюємо час обробки в метаданих
-    if (isset($productData['meta'])) {
-        $productData['meta']['response_time_ms'] = $processingTime;
-    }
-
-    // Покращуємо результати
-    $productData = $openaiService->enhanceResults($productData);
-
-    // Генеруємо звіт
-    $report = $openaiService->generateSearchReport($productData);
-
-    // Підготовка відповіді
-    $response = [
-        'success' => true,
-        'search_type' => $searchType,
-        'processing_time_ms' => $processingTime,
-        'timestamp' => date('c'),
-        'query' => $searchQuery,
-        'user_location' => $userLocation,
-
-        // Дані продукту
-        'product' => $productData['product_identification'] ?? [],
-        'results' => $productData['search_results'] ?? [],
-        'market_analysis' => $productData['market_analysis'] ?? [],
-        'report' => $report,
-
-        // Метадані
-        'meta' => $productData['meta'] ?? [],
-        'limited_results' => $productData['limited_results'] ?? false
-    ];
-
-    // Логування для аналітики
-    error_log(sprintf(
-        'PriceFinder Search: Type=%s, Query=%s, Results=%d, Time=%dms, Tokens=%d',
-        $searchType,
-        $searchQuery,
-        count($productData['search_results'] ?? []),
-        $processingTime,
-        $productData['meta']['tokens_used'] ?? 0
-    ));
-
-    echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-
-} catch (Exception $e) {
-    $errorCode = $e->getCode() ?: 500;
-    http_response_code($errorCode);
-
-    $errorResponse = [
-        'success' => false,
-        'error' => $e->getMessage(),
-        'code' => $errorCode,
-        'timestamp' => date('c')
-    ];
-
-    // Додаємо поради по типу помилки
-    if (strpos($e->getMessage(), 'OpenAI') !== false) {
-        $errorResponse['suggestion'] = 'Перевірте налаштування OpenAI API';
-    } elseif (strpos($e->getMessage(), 'файл') !== false) {
-        $errorResponse['suggestion'] = 'Перевірте формат та розмір файлу зображення';
-    } elseif (strpos($e->getMessage(), 'запит') !== false) {
-        $errorResponse['suggestion'] = 'Уточніть пошуковий запит';
-    }
-
-    echo json_encode($errorResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-
-    // Детальне логування помилок
-    error_log(sprintf(
-        'PriceFinder Error: %s | Code: %d | File: %s:%d | Request: %s',
-        $e->getMessage(),
-        $e->getCode(),
-        $e->getFile(),
-        $e->getLine(),
-        json_encode($_POST)
-    ));
-}
 ?>
-
